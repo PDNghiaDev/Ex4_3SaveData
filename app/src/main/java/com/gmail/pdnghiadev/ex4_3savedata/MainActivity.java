@@ -83,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
             fm.beginTransaction().add(R.id.fl_result_fragment, fragment, TAG_RESULT_FRAGMENT).commit();
         }
 
-
     }
 
     @Override

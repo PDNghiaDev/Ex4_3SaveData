@@ -14,6 +14,7 @@ import android.widget.ListView;
 
 import com.gmail.pdnghiadev.ex4_3savedata.adapter.ResultItemAdapter;
 import com.gmail.pdnghiadev.ex4_3savedata.common.OnButtonClickListener;
+import com.gmail.pdnghiadev.ex4_3savedata.database.DBAdapter;
 import com.gmail.pdnghiadev.ex4_3savedata.model.ResultItem;
 
 import java.io.File;
@@ -24,6 +25,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.StreamCorruptedException;
+import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,10 +41,21 @@ public class TapCountResultFragment extends Fragment implements OnButtonClickLis
     private static final String LIST_HIGHSCORE = "list_highscore";
     public static final String FILE_HIGHSCORE = "highscore.txt";
 
+    public DBAdapter dbAdapter;
+
     @Override
     public void onClick(ResultItem item) {
         // GET View and update on View
         list.add(item);
+
+
+        //----------- SQLITE ------------
+        try {
+            dbAdapter.open();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        dbAdapter.insertResultItem(item.getDate(), item.getCountTap());
 
         if (list.size() >= 1) {
             adapter.notifyDataSetChanged();
@@ -51,6 +65,7 @@ public class TapCountResultFragment extends Fragment implements OnButtonClickLis
     @Override
     public void onClear() {
         adapter.clear();
+        dbAdapter.removeHighscoreList();
     }
 
     @Override
@@ -84,18 +99,33 @@ public class TapCountResultFragment extends Fragment implements OnButtonClickLis
         Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        File file = new File(getActivity().getFilesDir(), FILE_HIGHSCORE);
 
-        // If file does not exists, then create it
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        //--------------- SQLITE ----------------
+        dbAdapter = new DBAdapter(getActivity());
+        try {
+            dbAdapter.open();
+            list = dbAdapter.getAllHighscore();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
-        list = readData();
+
+        //------------- FILE ---------------------
+//        File file = new File(getActivity().getFilesDir(), FILE_HIGHSCORE);
+//
+//        // If file does not exists, then create it
+//        if (!file.exists()) {
+//            try {
+//                file.createNewFile();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//        // Read data from File
+//        list = readData();
     }
 
     @Override
@@ -128,7 +158,13 @@ public class TapCountResultFragment extends Fragment implements OnButtonClickLis
     public void onPause() {
         super.onPause();
         Log.d(TAG, "onPause");
-        writeData(list);
+        //---------- SQLITE -------------
+        dbAdapter.close();
+
+
+        //--------- FILE -----------------
+        // Write data to File
+//        writeData(list);
     }
 
     @Override
